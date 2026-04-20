@@ -5,8 +5,8 @@ export interface Book {
   id: number;
   title: string;
   author: string;
-  year: number;
-  genre?: string[]; // küsimärk tähendab, et see on valikuline
+  PublishedYear: number;
+  genres?: string[]; // küsimärk tähendab, et see on valikuline
 }
 
 // 2. Võtame aadressi .env failist (või kasutame defaulti)

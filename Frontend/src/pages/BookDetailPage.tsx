@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getBookById, type Book } from '../api';
 
 const BookDetailPage = () => {
-  const { id } = useParams<{ id: string }>(); // Võtab URL-ist :id
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,8 +18,8 @@ const BookDetailPage = () => {
       try {
         setLoading(true);
         const response = await getBookById(id, controller.signal);
-        // Sinu backendi loogika andmete kättesaamiseks
-        setBook(response.data.data || response.data);
+        const data = response.data.data || response.data;
+        setBook(data);
       } catch (err: any) {
         if (err.name !== 'CanceledError') {
           setError('Raamatu andmete laadimine ebaõnnestus.');
@@ -54,9 +54,9 @@ const BookDetailPage = () => {
         <div className="bg-blue-600 p-8 text-white">
           <h1 className="text-4xl font-extrabold">{book.title}</h1>
           <p className="text-blue-100 text-xl mt-2">
-            Autor: {typeof book.author === 'object' 
-              ? `${book.author.firstName} ${book.author.lastName}` 
-              : book.author}
+            Autor: {typeof book.author === 'object' && book.author !== null
+              ? `${book.author.firstName || ''} ${book.author.lastName || ''}`.trim()
+              : book.author || 'Tundmatu autor'}
           </p>
         </div>
 
@@ -64,16 +64,20 @@ const BookDetailPage = () => {
           <div className="space-y-4">
             <div>
               <h3 className="text-gray-500 uppercase tracking-wider text-sm font-bold">Väljaandmise aasta</h3>
-              <p className="text-2xl font-semibold text-gray-900">{book.releaseYear || book.year}</p>
+              {/* PARANDUS: Kasutame publishedYear */}
+              <p className="text-2xl font-semibold text-gray-900">
+                {book.publishedYear || (book as any).year || '—'}
+              </p>
             </div>
             
             <div>
               <h3 className="text-gray-500 uppercase tracking-wider text-sm font-bold">Žanrid</h3>
               <div className="flex flex-wrap gap-2 mt-2">
-                {book.genre && book.genre.length > 0 ? (
-                  book.genre.map((g, i) => (
+                {/* PARANDUS: Kasutame genres ja kontrollime objekte */}
+                {Array.isArray((book as any).genres) && (book as any).genres.length > 0 ? (
+                  (book as any).genres.map((g: any, i: number) => (
                     <span key={i} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
-                      {g}
+                      {typeof g === 'object' ? g.name : g}
                     </span>
                   ))
                 ) : (
