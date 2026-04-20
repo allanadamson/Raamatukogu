@@ -5,41 +5,23 @@ import { Link } from 'react-router-dom';
 const BooksPage = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // --- 1. FILTRID ---
   const [searchTitle, setSearchTitle] = useState('');
   const [searchYear, setSearchYear] = useState('');
   const [searchLanguage, setSearchLanguage] = useState('');
-
-  // --- 2. SORTEERIMINE ---
-  const [sortBy, setSortBy] = useState<'title' | 'publishedYear'>('title');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  // --- 3. PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchData(controller.signal);
-    return () => controller.abort();
+    fetchData();
   }, []);
 
-  const fetchData = async (signal?: AbortSignal) => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await getBooks(signal);
-      const data = res.data?.data || res.data;
-      
-      if (Array.isArray(data)) {
-        setBooks(data);
-      } else {
-        setBooks([]);
-      }
-    } catch (err: any) {
-      if (err.name !== 'CanceledError') {
-        console.error("Viga andmete pärimisel:", err);
-      }
+      const res = await getBooks();
+      setBooks(res.data?.data || res.data || []);
+    } catch (err) {
+      console.error("Viga andmete pärimisel:", err);
     } finally {
       setLoading(false);
     }
@@ -56,155 +38,127 @@ const BooksPage = () => {
     }
   };
 
-  const renderAuthor = (author: any) => {
-    if (author && typeof author === 'object') {
-      return `${author.firstName || ''} ${author.lastName || ''}`.trim();
-    }
-    return author || 'Tundmatu autor';
-  };
+  const filteredBooks = books.filter(book => {
+    const title = (book.title || '').toLowerCase();
+    const year = (book.publishedYear || (book as any).year || '').toString();
+    const lang = ((book as any).language || '').toLowerCase();
 
-  // --- FILTREERIMISE JA SORTEERIMISE LOOGIKA ---
-  const filteredAndSortedBooks = books
-    .filter(book => {
-      const title = book.title || '';
-      const year = (book.publishedYear || (book as any).year || '').toString();
-      const lang = (book as any).language || '';
+    return title.includes(searchTitle.toLowerCase()) &&
+           year.includes(searchYear) &&
+           lang.includes(searchLanguage.toLowerCase());
+  });
 
-      return title.toLowerCase().includes(searchTitle.toLowerCase()) &&
-             year.includes(searchYear) &&
-             lang.toLowerCase().includes(searchLanguage.toLowerCase());
-    })
-    .sort((a, b) => {
-      const valA = sortBy === 'title' ? (a.title || '').toLowerCase() : (a.publishedYear || 0);
-      const valB = sortBy === 'title' ? (b.title || '').toLowerCase() : (b.publishedYear || 0);
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-  const totalPages = Math.ceil(filteredAndSortedBooks.length / itemsPerPage);
-  const currentItems = filteredAndSortedBooks.slice(
+  const currentItems = filteredBooks.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  if (loading) return <div className="p-10 text-center text-xl font-semibold">Laadin raamatuid...</div>;
+  const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+
+  if (loading) return <div className="p-10 text-center font-bold">Laadin raamatuid...</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900">Raamatukogu</h1>
-        <Link to="/admin" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md font-medium">
-          + Lisa raamat
-        </Link>
+      {/* PEALKIRI ILMA LISANUPUTA */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Raamatukogu</h1>
+        <p className="text-gray-500 mt-1">Kõik süsteemis registreeritud teosed</p>
       </div>
 
       {/* FILTRID */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input 
-            placeholder="Pealkiri..." 
-            className="p-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => {setSearchTitle(e.target.value); setCurrentPage(1);}}
-          />
-          <input 
-            placeholder="Aasta..." 
-            className="p-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => {setSearchYear(e.target.value); setCurrentPage(1);}}
-          />
-          <input 
-            placeholder="Keel..." 
-            className="p-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => {setSearchLanguage(e.target.value); setCurrentPage(1);}}
-          />
-        </div>
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="flex gap-4">
-            <select className="p-2 border rounded-md" onChange={(e) => setSortOrder(e.target.value as any)}>
-              <option value="asc">Kasvav</option>
-              <option value="desc">Kahanev</option>
-            </select>
-            <select 
-              className="p-2 border rounded-md"
-              value={itemsPerPage}
-              onChange={(e) => {setItemsPerPage(Number(e.target.value)); setCurrentPage(1);}}
-            >
-              <option value={5}>5 rida</option>
-              <option value={10}>10 rida</option>
-              <option value={20}>20 rida</option>
-            </select>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border">
+        <input 
+          placeholder="Otsi pealkirja järgi..." 
+          className="p-3 border rounded-lg bg-gray-50 focus:bg-white transition outline-none focus:ring-2 focus:ring-blue-500" 
+          onChange={e => { setSearchTitle(e.target.value); setCurrentPage(1); }} 
+        />
+        <input 
+          placeholder="Aasta..." 
+          className="p-3 border rounded-lg bg-gray-50 focus:bg-white transition outline-none focus:ring-2 focus:ring-blue-500" 
+          onChange={e => { setSearchYear(e.target.value); setCurrentPage(1); }} 
+        />
+        <input 
+          placeholder="Keel..." 
+          className="p-3 border rounded-lg bg-gray-50 focus:bg-white transition outline-none focus:ring-2 focus:ring-blue-500" 
+          onChange={e => { setSearchLanguage(e.target.value); setCurrentPage(1); }} 
+        />
       </div>
 
       {/* TABEL */}
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-bold">
+      <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="p-4 cursor-pointer" onClick={() => setSortBy('title')}>Pealkiri</th>
-              <th className="p-4">Autor</th>
-              <th className="p-4 text-center cursor-pointer" onClick={() => setSortBy('publishedYear')}>Aasta</th>
-              <th className="p-4">Žanrid</th>
-              <th className="p-4 text-right">Tegevused</th>
+              <th className="p-4 font-bold text-gray-600 uppercase text-xs tracking-wider">Pealkiri</th>
+              <th className="p-4 font-bold text-gray-600 uppercase text-xs tracking-wider text-right">Tegevused</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-100">
             {currentItems.length > 0 ? (
-              currentItems.map((book) => (
-                <tr key={book.id} className="hover:bg-blue-50 transition-colors">
-                  <td className="p-4 font-semibold text-gray-900">{book.title}</td>
-                  <td className="p-4 text-gray-600">{renderAuthor(book.author)}</td>
-                  <td className="p-4 text-center text-gray-600">
-                    {book.publishedYear || (book as any).year || '—'}
-                  </td>
+              currentItems.map(book => (
+                <tr key={book.id} className="hover:bg-blue-50/50 transition">
                   <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
-                      {/* TURVALINE ŽANRITE KONTROLL (Id ja Name jaoks) */}
-                      {Array.isArray((book as any).genres) ? (
-                        (book as any).genres.map((g: any, i: number) => (
-                          <span key={i} className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded">
-                            {typeof g === 'object' ? g.name : g}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-gray-400 text-xs italic">Puudub</span>
-                      )}
-                    </div>
+                    <div className="font-bold text-gray-900">{book.title}</div>
+                    <div className="text-xs text-gray-400">ID: {book.id}</div>
                   </td>
-                  <td className="p-4 text-right space-x-3">
-                    <Link to={`/books/${book.id}`} className="text-blue-600 font-medium hover:underline">Vaata</Link>
-                    <button onClick={() => handleDelete(book.id)} className="text-red-500 font-medium hover:underline">
-                      Kustuta
-                    </button>
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end items-center gap-3">
+                      <Link 
+                        to={`/books/${book.id}`} 
+                        className="text-blue-600 font-bold hover:text-blue-800 text-sm"
+                      >
+                        Vaata
+                      </Link>
+                      <Link 
+                        to={`/admin/edit/${book.id}`} 
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm shadow-sm transition"
+                      >
+                        Muuda
+                      </Link>
+                      <button 
+                        onClick={() => handleDelete(book.id)} 
+                        className="text-red-400 hover:text-red-600 transition"
+                        title="Kustuta"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={5} className="p-10 text-center text-gray-400">Raamatuid ei leitud.</td></tr>
+              <tr>
+                <td colSpan={2} className="p-20 text-center text-gray-400 italic">
+                  Ühtegi raamatut ei leitud.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
       {/* PAGINATION */}
-      <div className="mt-8 flex justify-center items-center gap-4">
-        <button 
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage(prev => prev - 1)}
-          className="px-4 py-2 bg-white border rounded-md disabled:opacity-50"
-        >
-          ←
-        </button>
-        <span className="text-sm font-medium">Leht {currentPage} / {totalPages || 1}</span>
-        <button 
-          disabled={currentPage === totalPages || totalPages === 0}
-          onClick={() => setCurrentPage(prev => prev + 1)}
-          className="px-4 py-2 bg-white border rounded-md disabled:opacity-50"
-        >
-          →
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="mt-8 flex justify-center items-center gap-4">
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}
+            className="p-2 bg-white border rounded-lg disabled:opacity-30 shadow-sm"
+          >
+            ←
+          </button>
+          <span className="text-sm font-bold text-gray-600">Leht {currentPage} / {totalPages}</span>
+          <button 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => p + 1)}
+            className="p-2 bg-white border rounded-lg disabled:opacity-30 shadow-sm"
+          >
+            →
+          </button>
+        </div>
+      )}
     </div>
   );
 };

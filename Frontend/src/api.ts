@@ -1,3 +1,11 @@
+export const createBook = (data: any) => axios.post(`${API_URL}/books`, data);
+export const updateBook = (id: string, data: any) => axios.put(`${API_URL}/books/${id}`, data);
+export const getAuthors = () => axios.get(`${API_URL}/authors`);
+export const getPublishers = () => axios.get(`${API_URL}/publishers`);
+export const getAverageRating = (id: string) => axios.get(`${API_URL}/books/${id}/average-rating`);
+export const getReviews = (id: string) => axios.get(`${API_URL}/books/${id}/reviews`);
+export const addReview = (id: string, review: { username: string, rating: number, comment: string }) => 
+  axios.post(`${API_URL}/books/${id}/reviews`, review);
 import axios from 'axios';
 
 // 1. Määrame andmete kuju (TypeScript interface)
