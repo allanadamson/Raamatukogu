@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Author {
+  id          Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  birthYear   Int
+  nationality String
+  biography   String?
+  books       Book[]
+  createdAt   DateTime @default(now())
+}
+
+model Publisher {
+  id          Int      @id @default(autoincrement())
+  name        String
+  country     String
+  foundedYear Int
+  website     String?
+  books       Book[]
+  createdAt   DateTime @default(now())
+}
+
+model Book {
+  id            Int       @id @default(autoincrement())
+  title         String
+  isbn          String    @unique
+  publishedYear Int
+  pageCount     Int
+  language      String
+  description   String
+  coverImage    String?
+  
+  author        Author    @relation(fields: [authorId], references: [id])
+  authorId      Int
+  publisher     Publisher @relation(fields: [publisherId], references: [id])
+  publisherId   Int
+  
+  genres        Genre[]   
+  reviews       Review[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([title])
+  @@index([isbn])
+}
+
+model Genre {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  books Book[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId    Int
+  userName  String
+  rating    Int      
+  comment   String
+  createdAt DateTime @default(now())
+}
