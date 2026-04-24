@@ -4,7 +4,7 @@ import prisma from "./lib/prisma.js";
 import bookRoutes from "./routes/book.routes.js";
 
 const app: Application = express();
-const PORT: number = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
