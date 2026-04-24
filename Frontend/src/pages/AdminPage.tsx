@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createBook, getBookById, updateBook } from "../api";
 
@@ -82,7 +82,7 @@ export default function AdminPage() {
     return () => controller.abort();
   }, [id, isEditMode]);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     try {
