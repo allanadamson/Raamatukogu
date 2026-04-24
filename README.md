@@ -102,24 +102,6 @@ npm run build
 
 ---
 
-## Projekti struktuur
-
-.
-├── Frontend
-│   ├── src
-│   ├── public
-│   └── ...
-├── Backend
-├── screenshots
-│   ├── home.png
-│   ├── add.png
-│   └── edit.png
-├── .env.example
-├── .gitignore
-├── README.md
-
----
-
 ## .env.example
 
 VITE_API_URL=https://raamatukogu.onrender.com/api/v1
