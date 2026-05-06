@@ -31,6 +31,8 @@ https://github.com/allanadamson/Raamatukogu
 ---
 
 ## Live demo
+Rakenduse esimasel käivitusel raamatute nimekirja laadimine võtab aega umbes 15 sekundit, kuna Renderi tasuta verioon ei hoia andmebaasi kogu aeg üleval. Kui tuleb päring antud andmetele, siis äratatakse andmebaas üles.
+Järgmised päringud on juba reaalajas.
 
 Rakendust saab kasutada siin:
 https://allanadamson.github.io/Raamatukogu/#/books
